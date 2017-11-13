@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Respond to Events</title>
+	
+    <script type="text/javascript" 
+	    src="https://public.tableau.com/javascripts/api/tableau-2.min.js"></script>
+    
+    <script type="text/javascript">
+        var viz;
+        
+        function initViz() {
+            var containerDiv = document.getElementById("vizContainer"),
+                url = "https://public.tableau.com/views/selection_0/PickaColor",
+                options = {
+                    "Choice": "",
+                    hideTabs: true,
+                    onFirstInteractive: function () {
+                        listenToMarksSelection();
+                        document.getElementById('getData').disabled = false;
+                    }
+                };
+            
+            viz = new tableau.Viz(containerDiv, url, options);
+        }
+
+        function listenToMarksSelection() {
+            viz.addEventListener(tableau.TableauEventName.MARKS_SELECTION, onMarksSelection);
+        }
+
+        function onMarksSelection(marksEvent) {
+            return marksEvent.getMarksAsync().then(reportSelectedMarks);
+        }
+
+        function reportSelectedMarks(marks) {
+            var html = ""; 
+            var total = 0;
+        
+            for (var markIndex = 0; markIndex < marks.length; markIndex++) {
+                var pairs = marks[markIndex].getPairs();
+                html += "<b>Mark " + markIndex + ":</b><ul>";
+
+                for (var pairIndex = 0; pairIndex < pairs.length; pairIndex++) {
+                    var pair = pairs[pairIndex];
+                    html += "<li><b>Field Name:</b> " + pair.fieldName;
+                    html += "<br/><b>Value:</b> " + pair.formattedValue + "</li>"; 
+                }
+
+                total ++
+                html += "</ul>";
+                
+            }
+
+
+            var infoDiv = document.getElementById('markDetails');
+            infoDiv.innerHTML = html + "<br/><b>Marks Selected:</b>"+total;
+        }
+
+         function getUnderlyingData(){
+                sheet = viz.getWorkbook().getActiveSheet()
+         // If the active sheet is not a dashboard, then you can just enter:
+         // viz.getWorkbook().getActiveSheet();
+                options = {
+                    maxRows: 10, // Max rows to return. Use 0 to return all rows
+                    ignoreAliases: false,
+                    ignoreSelection: false,
+                    includeAllColumns: false
+                };
+
+                sheet.getUnderlyingDataAsync(options).then(function(t){
+                       table = t;
+            var tgt = document.getElementById("dataTarget");
+            tgt.innerHTML = "<h4>Underlying Data:</h4><p>" + JSON.stringify(table.getData()) + "</p>";
+                });
+            }
+
+    </script>
+</head>
+
+<body onload="initViz();">
+    <div id="vizContainer"></div>
+        <div class="page-header">
+            <h1>getData() Basic Example</h1>
+            <p>Click the "Get Data" button to get underlying data for the viz.</p>
+            <button id="getData" onclick="getUnderlyingData()" class="btn" disabled>Get Data</button>
+        </div>
+    <br>
+    <div id="markDetails">Information about selected marks displays here.</div>
+
+    <div id ="dataTarget">Data here:</div>
+</body>
+
+</html>
